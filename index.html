@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收藏夹管理器</title>
+    <link rel="stylesheet" href="bookmarks.css?v=2">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>收藏夹管理器</h1>
+                <p>上传浏览器收藏夹文件，轻松管理和导出指定内容</p>
+            </div>
+            <div class="header-right">
+                <a class="btn btn-sm" href="README.html" target="_blank">使用说明</a>
+                <button class="theme-toggle" id="themeToggle" title="切换暗色/亮色主题">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                </svg>
+            </div>
+            <h3>点击或拖拽上传收藏夹文件</h3>
+            <p>支持 Chrome / Edge / Firefox 等浏览器导出的 bookmarks.html</p>
+            <input type="file" id="fileInput" accept=".html,.htm">
+        </div>
+
+        <div id="bookmarkContainer" style="display: none;">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索...">
+                    </div>
+                    <div class="stats">
+                        已选 <span id="selectedCount">0</span> 项
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-sm" id="addBookmarkBtn" title="新建书签">+ 书签</button>
+                    <button class="btn btn-sm" id="addFolderBtn" title="新建文件夹">+ 文件夹</button>
+                    <button class="btn btn-sm" id="mergeBtn" title="合并其他收藏夹文件">合并</button>
+                    <span class="toolbar-divider"></span>
+                    <button class="btn btn-sm" id="selectAllBtn">全选</button>
+                    <button class="btn btn-sm" id="deselectAllBtn">取消全选</button>
+                    <button class="btn btn-sm btn-danger" id="deleteSelectedBtn">删除</button>
+                    <span class="toolbar-divider"></span>
+                    <button class="btn btn-sm btn-warn" id="dedupBtn" title="检测并清理重复链接">去重</button>
+                    <button class="btn btn-sm btn-primary" id="exportBtn">导出选中</button>
+                </div>
+            </div>
+
+            <div class="breadcrumb-bar" id="breadcrumbBar" style="display:none;">
+                <span class="breadcrumb-item" data-idx="-1">首页</span>
+            </div>
+
+            <div class="bookmark-tree" id="bookmarkTree"></div>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+            <div class="icon">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                </svg>
+            </div>
+            <h3>暂无数据</h3>
+            <p>请上传收藏夹 HTML 文件开始管理，或点击下方按钮新建</p>
+            <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+                <button class="btn btn-primary" id="addBookmarkEmpty">新建书签</button>
+                <button class="btn" id="addFolderEmpty">新建文件夹</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal">
+            <h3>导出选项</h3>
+            <div class="modal-body">
+                <p>已选择 <strong id="modalSelectedCount">0</strong> 个项目</p>
+
+                <div class="export-range">
+                    <span class="range-option active" data-mode="selected">导出选中项</span>
+                    <span class="range-option" data-mode="unselected">导出未选中项</span>
+                </div>
+
+                <div class="export-options">
+                    <div class="export-option selected" data-format="html">
+                        <div class="option-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M2 12h20"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                        </div>
+                        <div class="option-info">
+                            <h4>HTML 收藏夹格式</h4>
+                            <p>标准浏览器格式，可直接导入任何浏览器</p>
+                        </div>
+                    </div>
+                    <div class="export-option" data-format="json">
+                        <div class="option-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <path d="M10 13l-2 2 2 2"/>
+                                <path d="M14 13l2 2-2 2"/>
+                            </svg>
+                        </div>
+                        <div class="option-info">
+                            <h4>JSON 格式</h4>
+                            <p>结构化数据，方便程序处理或备份</p>
+                        </div>
+                    </div>
+                    <div class="export-option" data-format="md">
+                        <div class="option-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <path d="M8 13h2"/>
+                                <path d="M8 17h6"/>
+                                <path d="M14 13h2"/>
+                            </svg>
+                        </div>
+                        <div class="option-info">
+                            <h4>Markdown 格式</h4>
+                            <p>适合文档记录，支持层级缩进和链接</p>
+                        </div>
+                    </div>
+                    <div class="export-option" data-format="txt">
+                        <div class="option-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <line x1="10" y1="9" x2="8" y2="9"/>
+                            </svg>
+                        </div>
+                        <div class="option-info">
+                            <h4>纯文本列表</h4>
+                            <p>仅包含标题和链接，每行一个</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="cancelExport">取消</button>
+                <button class="btn btn-primary" id="confirmExport">确认导出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden merge file input -->
+    <input type="file" id="mergeInput" accept=".html,.htm" style="display: none;">
+
+    <div class="toast" id="toast"></div>
+
+    <script src="bookmarks.js"></script>
+
+    <div class="beian-bar">
+        <div class="beian-pc">
+            <span class="beian-disclaimer">本站内容仅供学习和交流，非商业用途</span>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="beian-icp">浙ICP备2025187466号</a>
+            <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33030402001483" target="_blank" rel="noopener noreferrer" class="beian-gongan">
+                <img src="https://www.937788.xyz/gonganbeian.png" alt="公安备案" onerror="this.style.display='none'">
+                浙公网安备33030402001483号
+            </a>
+        </div>
+        <div class="beian-mobile">
+            <span class="beian-disclaimer">本站内容仅供学习和交流，非商业用途</span>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="beian-icp">浙ICP备2025187466号</a>
+            <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33030402001483" target="_blank" rel="noopener noreferrer" class="beian-gongan">
+                <img src="https://www.937788.xyz/gonganbeian.png" alt="公安备案" onerror="this.style.display='none'">
+                浙公网安备33030402001483号
+            </a>
+        </div>
+    </div>
+</body>
+</html>
