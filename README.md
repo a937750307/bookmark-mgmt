@@ -28,3 +28,7 @@
 - 主题偏好保存在 `localStorage` 中
 - 拖拽基于 HTML5 Drag and Drop API
 - 收藏夹 HTML 解析使用浏览器内置的 `DOMParser`
+
+## 截图
+
+![截图](screenshot.png)
